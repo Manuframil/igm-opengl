@@ -14,8 +14,8 @@ uniform mat4 projection;
 uniform mat3 normal_to_world;
 
 void main() {
-  gl_Position =
-  frag_3Dpos =
-  vs_normal =
-  vs_tex_coord =
+  gl_Position = projection * view * model * vec4( v_pos, 1.0f );
+  frag_3Dpos = vec3( model * vec4 ( v_pos , 1.0 ) );
+  vs_normal = normalize( normal_to_world * v_normal );
+  vs_tex_coord = v_tex;
 }

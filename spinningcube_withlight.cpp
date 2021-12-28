@@ -23,7 +23,8 @@ void render(double);
 
 GLuint shader_program = 0; // shader program to set render pipeline
 GLuint vao = 0; // Vertext Array Object to set input data
-GLint model_location, view_location, proj_location; // Uniforms for transformation matrices
+GLint model_location, view_location, proj_location, normal_location; // Uniforms for transformation matrices
+GLint light_location, material_location, camera_position;
 
 // Shader names
 const char *vertexFileName = "spinningcube_withlight_vs.glsl";
@@ -231,6 +232,10 @@ int main() {
   model_location = glGetUniformLocation(shader_program, "model");
   view_location = glGetUniformLocation(shader_program, "view");
   proj_location = glGetUniformLocation(shader_program, "projection");
+  normal_location = glGetUniformLocation(shader_program, "normal_to_world");
+  light_location = glGetUniformLocation(shader_program,"light");
+  material_location = glGetUniformLocation(shader_program,"material");
+  camera_position = glGetUniformLocation(shader_program,"view_pos");
   // [...]
 
 // Render loop
@@ -260,7 +265,7 @@ void render(double currentTime) {
   glUseProgram(shader_program);
   glBindVertexArray(vao);
 
-  glm::mat4 model_matrix, view_matrix, proj_matrix;
+  glm::mat4 model_matrix, view_matrix, proj_matrix, normal_matrix;
 
   model_matrix = glm::mat4(1.f);
   view_matrix = glm::lookAt(                 camera_pos,  // pos
@@ -270,12 +275,25 @@ void render(double currentTime) {
   // Moving cube
   // model_matrix = glm::rotate(model_matrix,
   //   [...]
+  model_matrix = glm::rotate(model_matrix,
+                          glm::radians((float)currentTime * 45.0f),
+                          glm::vec3(0.0f, 1.0f, 0.0f));
+  glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
   //
   // Projection
   // proj_matrix = glm::perspective(glm::radians(50.0f),
   //   [...]
   //
+  proj_matrix = glm::perspective(glm::radians(50.0f),
+                                 (float) gl_width / (float) gl_height,
+                                 0.1f, 1000.0f);
+  glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
+
+
+
   // Normal matrix: normal vectors to world coordinates
+  normal_matrix = glm::transpose(glm::inverse(glm::mat3(model_matrix)));
+  //glUniformMatrix4fv(normal_location, 1, GL_FALSE, glm::value_ptr(normal_matrix));
 
   glDrawArrays(GL_TRIANGLES, 0, 36);
 }
