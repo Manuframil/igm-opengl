@@ -17,3 +17,6 @@ class Plane(Figure):
 
 	def get_normal(self, M):
 		return self.normal
+
+	def __str__(self):
+		return f'Plane (pos={self.position})'

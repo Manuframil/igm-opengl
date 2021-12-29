@@ -4,7 +4,7 @@ from util import normalize
 
 
 class Scene():
-	def __init__(self, height, width):
+	def __init__(self, height, width, name = "Scene 1"):
 		self.height = height
 		self.width = width
 		self.img = np.zeros((height, width, 3))
@@ -16,6 +16,7 @@ class Scene():
 		self._lights = []
 		self._figures = []
 		self.depth_max = 5
+		self.name = name
 
 	def add_camera(self, camera):
 		self._camera = camera
@@ -24,13 +25,13 @@ class Scene():
 		self._lights.append(light)
 
 	def add_lights(self, lights):
-		self._lights = lights
+		self._lights.extend(lights)
 
 	def add_figure(self, figure):
 		self._figures.append(figure)
 
 	def add_figures(self, figures):
-		self._figures = figures
+		self._figures.extend(figures)
 
 	def save(self, filename = 'fig.png'):
 		plt.imsave(filename, self.img)
@@ -67,13 +68,13 @@ class Scene():
 			col_ray += obj.specular_c * max(np.dot(N, normalize(toL + toO)), 0) ** self._specular_k * light.color
 		return obj, M, N, col_ray
 
-	def draw(self):
+	def draw(self, verbose = 1):
 		r = float(self.width) / self.height
 		S = (-1., -1. / r + .25, 1., 1. / r + .25)
 		col = np.zeros(3)
 
 		for i, x in enumerate(np.linspace(S[0], S[2], self.width)):
-			if i % 10 == 0:
+			if i % 10 == 0 and verbose >= 1:
 				print(f'{i / float(self.width) * 100}%')
 			for j, y in enumerate(np.linspace(S[1], S[3], self.height)):
 				col[:] = 0
@@ -94,3 +95,12 @@ class Scene():
 				    col += reflection * col_ray
 				    reflection *= obj.reflection
 				self.img[self.height - j - 1, i, :] = np.clip(col, 0, 1)
+
+
+	def __str__(self):
+		out = f'{self.name}:\n'
+		for f in self._figures:
+			out += ' - '
+			out += f.__str__()
+			out += '\n'
+		return out

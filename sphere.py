@@ -25,3 +25,6 @@ class Sphere(Figure):
 
 	def get_normal(self, M):
 		return util.normalize(M - self.position)
+
+	def __str__(self):
+		return f"Sphere (size = {self.radius})"
