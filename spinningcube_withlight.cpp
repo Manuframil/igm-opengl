@@ -204,6 +204,7 @@ int main() {
      0.25f,  0.25f, -0.25f  // 3
   };
 
+  const GLfloat normales[] = {};
 // Vertex Buffer Object (for vertex coordinates)
   GLuint vbo = 0;
   glGenBuffers(1, &vbo);
@@ -216,12 +217,23 @@ int main() {
   glEnableVertexAttribArray(0);
 
   // 1: vertex normals (x, y, z)
+  GLuint normalesVBO = 0;
+  glGenBuffers(1, &normalesVBO);
+  glBindBuffer(GL_ARRAY_BUFFER, normalesVBO);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(normales), normales, GL_STATIC_DRAW);
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+  glEnableVertexAttribArray(1);
+
+  //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+  //glEnableVertexAttribArray(1);
 
   // Unbind vbo (it was conveniently registered by VertexAttribPointer)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 1);
 
   // Unbind vao
   glBindVertexArray(0);
+  glBindVertexArray(1);
 
   // Uniforms
   
