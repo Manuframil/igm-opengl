@@ -199,6 +199,7 @@ int main() {
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
   };
 
+  const GLfloat normales[] = {};
 // Vertex Buffer Object (for vertex coordinates)
   GLuint vbo = 0;
   GLuint cubeVAO = 0;
