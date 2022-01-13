@@ -18,8 +18,12 @@ int gl_height = 480;
 
 void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
+<<<<<<< HEAD
 //void render(double, GLuint *cubeVAO, GLuint *lightCubeVAO);
 void render(double, GLuint *cubeVAO);
+=======
+void render(double, GLuint *cubeVAO, GLuint *lightCubeVAO);
+>>>>>>> 42fff344cc6a8e18166c10304de3f78a7d06bbf1
 void obtenerNormales(GLfloat * normales,const GLfloat vertices[]);
 
 GLuint shader_program = 0; // shader program to set render pipeline
@@ -183,11 +187,19 @@ int main() {
     -0.25f, -0.25f,  0.25f, // 6
     -0.25f,  0.25f,  0.25f, // 7
     -0.25f, -0.25f, -0.25f, // 1
+<<<<<<< HEAD
 
     -0.25f,  0.25f, -0.25f, // 0
     -0.25f, -0.25f, -0.25f, // 1
     -0.25f,  0.25f,  0.25f, // 7
 
+=======
+
+    -0.25f,  0.25f, -0.25f, // 0
+    -0.25f, -0.25f, -0.25f, // 1
+    -0.25f,  0.25f,  0.25f, // 7
+
+>>>>>>> 42fff344cc6a8e18166c10304de3f78a7d06bbf1
      0.25f, -0.25f, -0.25f, // 2
      0.25f, -0.25f,  0.25f, // 5
     -0.25f, -0.25f, -0.25f, // 1
@@ -229,9 +241,15 @@ int main() {
   glEnableVertexAttribArray(1);
 
   // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
+<<<<<<< HEAD
   //GLuint lightCubeVAO = 0;
   //glGenVertexArrays(1, &lightCubeVAO);
   //glBindVertexArray(lightCubeVAO);
+=======
+  GLuint lightCubeVAO = 0;
+  glGenVertexArrays(1, &lightCubeVAO);
+  glBindVertexArray(lightCubeVAO);
+>>>>>>> 42fff344cc6a8e18166c10304de3f78a7d06bbf1
 
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   // note that we update the lamp's position attribute's stride to reflect the updated buffer data
@@ -320,6 +338,7 @@ void render(double currentTime, GLuint *cubeVAO) {
   model_matrix = glm::rotate(model_matrix,
                           glm::radians((float)currentTime * 30.0f),
                           glm::vec3(0.0f, 1.0f, 0.0f));
+
   model_matrix = glm::rotate(model_matrix,
                             glm::radians((float)currentTime * 81.0f),
                             glm::vec3(1.0f, 0.0f, 0.0f));
@@ -353,6 +372,7 @@ void render(double currentTime, GLuint *cubeVAO) {
   glDrawArrays(GL_TRIANGLES, 0, 36);
 
   // Representacion de la luz
+<<<<<<< HEAD
   //glUseProgram(shader_program);
   //glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
   //glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view_matrix));  
@@ -364,6 +384,19 @@ void render(double currentTime, GLuint *cubeVAO) {
   //glBindVertexArray(*lightCubeVAO);
 
   //glDrawArrays(GL_TRIANGLES, 0, 36);
+=======
+  glUseProgram(shader_program);
+  glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
+  glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view_matrix));  
+  model_matrix = glm::mat4(1.f);
+  model_matrix = glm::translate(model_matrix, light_pos);
+  model_matrix = glm::scale(model_matrix, glm::vec3(0.1f)); // a smaller cube
+  glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
+
+  glBindVertexArray(*lightCubeVAO);
+
+  glDrawArrays(GL_TRIANGLES, 0, 36);
+>>>>>>> 42fff344cc6a8e18166c10304de3f78a7d06bbf1
 
 }
 
@@ -407,3 +440,32 @@ void obtenerNormales(GLfloat * normales,const GLfloat vertices[]){
   }
 
 }
+<<<<<<< HEAD
+=======
+
+  
+
+/*
+
+# N y P significan Negativo y positivo
+N = -0.25
+P = 0.25
+
+# Representacion de los 3 vertices v1,2 y 3
+v1 = [P,P,P]
+v2 = [P,P,N]
+v3 = [N,P,P]
+
+# Algoritmo para el cálculo de la normal
+U = [v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2]]
+V = [v3[0] - v1[0], v3[1] - v1[1], v3[2] - v1[2]]
+
+x = U[1] * V[2] - U[2] * V[1]
+y = U[2] * V[0] - U[0] * V[2]
+z = U[0] * V[1] - U[1] * V[0]
+
+# Impresión
+x, y, z
+
+*/
+>>>>>>> 42fff344cc6a8e18166c10304de3f78a7d06bbf1
