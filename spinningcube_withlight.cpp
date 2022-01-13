@@ -1,7 +1,6 @@
 // Copyright (C) 2020 Emilio J. Padrón
 // Released as Free Software under the X11 License
 // https://spdx.org/licenses/X11.html
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
@@ -19,10 +18,12 @@ int gl_height = 480;
 
 void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-void render(double, GLuint *cubeVAO, GLuint *lightCubeVAO);
+//void render(double, GLuint *cubeVAO, GLuint *lightCubeVAO);
+void render(double, GLuint *cubeVAO);
+void obtenerNormales(GLfloat * normales,const GLfloat vertices[]);
 
 GLuint shader_program = 0; // shader program to set render pipeline
-GLuint vao = 0; // Vertext Array Object to set input data
+GLuint cubeVAO = 0; // Vertext Array Object to set input data
 GLint model_location, view_location, proj_location, normal_location; // Uniforms for transformation matrices
 GLint light_position_location, light_ambient_location, light_diffuse_location, light_specular_location; // Uniforms for light data
 GLint material_ambient_location, material_diffuse_location, material_specular_location, material_shininess_location; // Uniforms for material matrices
@@ -33,10 +34,10 @@ const char *vertexFileName = "spinningcube_withlight_vs.glsl";
 const char *fragmentFileName = "spinningcube_withlight_fs.glsl";
 
 // Camera
-glm::vec3 camera_pos(0.0f, 0.0f, 3.0f);
+glm::vec3 camera_pos(0.0f, 0.0f, 2.0f);
 
 // Lighting
-glm::vec3 light_pos(1.2f, 1.0f, 2.0f);
+glm::vec3 light_pos(0.0f, 0.0f, 1.0f);
 glm::vec3 light_ambient(0.2f, 0.2f, 0.2f);
 glm::vec3 light_diffuse(0.6f, 0.6f, 0.6f);
 glm::vec3 light_specular(1.0f, 1.0f, 1.0f);
@@ -142,8 +143,8 @@ int main() {
   glDeleteShader(fs);
 
   // Vertex Array Object
-  glGenVertexArrays(1, &vao);
-  glBindVertexArray(vao);
+  glGenVertexArrays(1, &cubeVAO);
+  glBindVertexArray(cubeVAO);
 
   // Cube to be rendered
   //
@@ -155,87 +156,95 @@ int main() {
   //       6        5
   //
   const GLfloat vertex_positions[] = {
+    -0.25f, -0.25f, -0.25f,  // 1
+    -0.25f,  0.25f, -0.25f,  // 0
+     0.25f, -0.25f, -0.25f,  // 2
 
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+     0.25f,  0.25f, -0.25f,  // 3
+     0.25f, -0.25f, -0.25f,  // 2
+    -0.25f,  0.25f, -0.25f,  // 0
 
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-         0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+     0.25f, -0.25f, -0.25f, // 2
+     0.25f,  0.25f, -0.25f, // 3
+     0.25f, -0.25f,  0.25f, // 5
 
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+     0.25f,  0.25f,  0.25f, // 4
+     0.25f, -0.25f,  0.25f, // 5
+     0.25f,  0.25f, -0.25f, // 3
 
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+     0.25f, -0.25f,  0.25f, // 5
+     0.25f,  0.25f,  0.25f, // 4
+    -0.25f, -0.25f,  0.25f, // 6
 
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+    -0.25f,  0.25f,  0.25f, // 7
+    -0.25f, -0.25f,  0.25f, // 6
+     0.25f,  0.25f,  0.25f, // 4
 
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+    -0.25f, -0.25f,  0.25f, // 6
+    -0.25f,  0.25f,  0.25f, // 7
+    -0.25f, -0.25f, -0.25f, // 1
+
+    -0.25f,  0.25f, -0.25f, // 0
+    -0.25f, -0.25f, -0.25f, // 1
+    -0.25f,  0.25f,  0.25f, // 7
+
+     0.25f, -0.25f, -0.25f, // 2
+     0.25f, -0.25f,  0.25f, // 5
+    -0.25f, -0.25f, -0.25f, // 1
+
+    -0.25f, -0.25f,  0.25f, // 6
+    -0.25f, -0.25f, -0.25f, // 1
+     0.25f, -0.25f,  0.25f, // 5
+
+     0.25f,  0.25f,  0.25f, // 4
+     0.25f,  0.25f, -0.25f, // 3
+    -0.25f,  0.25f,  0.25f, // 7
+
+    -0.25f,  0.25f, -0.25f, // 0
+    -0.25f,  0.25f,  0.25f, // 7
+     0.25f,  0.25f, -0.25f, // 3
   };
 
-  const GLfloat normales[] = {};
+  GLfloat normales[sizeof(float)* 108] = {};
+
 // Vertex Buffer Object (for vertex coordinates)
   GLuint vbo = 0;
-  GLuint cubeVAO = 0;
-
-  glGenVertexArrays(1, &cubeVAO);
   glGenBuffers(1, &vbo);
-
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_positions), vertex_positions, GL_STATIC_DRAW);
 
-  glBindVertexArray(cubeVAO);
-
   // Vertex attributes
   // 0: vertex position (x, y, z)
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*) 0);
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(0);
 
   // 1: vertex normals (x, y, z)
-  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+  obtenerNormales(normales, vertex_positions);
+  GLuint normalesBuffer = 0;
+  glGenBuffers(1, &normalesBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, normalesBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(normales), normales, GL_STATIC_DRAW);
+
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(1);
 
-    // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
-    GLuint lightCubeVAO;
-    glGenVertexArrays(1, &lightCubeVAO);
-    glBindVertexArray(lightCubeVAO);
+  // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
+  //GLuint lightCubeVAO = 0;
+  //glGenVertexArrays(1, &lightCubeVAO);
+  //glBindVertexArray(lightCubeVAO);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    // note that we update the lamp's position attribute's stride to reflect the updated buffer data
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
+  glBindBuffer(GL_ARRAY_BUFFER, vbo);
+  // note that we update the lamp's position attribute's stride to reflect the updated buffer data
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+  glEnableVertexAttribArray(0);
 
   // Unbind vbo (it was conveniently registered by VertexAttribPointer)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
+  glBindBuffer(GL_ARRAY_BUFFER, 1);
 
   // Unbind vao
   glBindVertexArray(0);
+  glBindVertexArray(1);
 
   // Uniforms
   
@@ -271,7 +280,8 @@ int main() {
 
     processInput(window);
 
-    render(glfwGetTime(), &cubeVAO, &lightCubeVAO);
+    //render(glfwGetTime(), &cubeVAO, &lightCubeVAO);
+    render(glfwGetTime(), &cubeVAO);
 
     glfwSwapBuffers(window);
 
@@ -283,7 +293,8 @@ int main() {
   return 0;
 }
 
-void render(double currentTime, GLuint *cubeVAO, GLuint *lightCubeVAO) {
+//void render(double currentTime, GLuint *cubeVAO, GLuint *lightCubeVAO) {
+void render(double currentTime, GLuint *cubeVAO) {
   float f = (float)currentTime * 0.2f;
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -291,9 +302,10 @@ void render(double currentTime, GLuint *cubeVAO, GLuint *lightCubeVAO) {
   glViewport(0, 0, gl_width, gl_height);
 
   glUseProgram(shader_program);
-  glBindVertexArray(vao);
+  glBindVertexArray(*cubeVAO);
 
-  glm::mat4 model_matrix, view_matrix, proj_matrix, normal_matrix;
+  glm::mat4 model_matrix, view_matrix, proj_matrix;
+  glm::mat3 normal_matrix;
 
   model_matrix = glm::mat4(1.f);
   
@@ -308,7 +320,9 @@ void render(double currentTime, GLuint *cubeVAO, GLuint *lightCubeVAO) {
   model_matrix = glm::rotate(model_matrix,
                           glm::radians((float)currentTime * 30.0f),
                           glm::vec3(0.0f, 1.0f, 0.0f));
-
+  model_matrix = glm::rotate(model_matrix,
+                            glm::radians((float)currentTime * 81.0f),
+                            glm::vec3(1.0f, 0.0f, 0.0f));
 
   // Projection
   proj_matrix = glm::perspective(glm::radians(50.0f),
@@ -335,20 +349,21 @@ void render(double currentTime, GLuint *cubeVAO, GLuint *lightCubeVAO) {
 
   glUniform3fv(camera_pos_location, 1, glm::value_ptr(camera_pos));
 
-  glBindVertexArray(*cubeVAO);
+  //glBindVertexArray(*cubeVAO);
   glDrawArrays(GL_TRIANGLES, 0, 36);
 
   // Representacion de la luz
-  glUseProgram(shader_program);
-  glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
-  glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view_matrix));  
-  model_matrix = glm::mat4(1.f);
-  model_matrix = glm::translate(model_matrix, light_pos);
-  model_matrix = glm::scale(model_matrix, glm::vec3(0.1f)); // a smaller cube
-  glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
+  //glUseProgram(shader_program);
+  //glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
+  //glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view_matrix));  
+  //model_matrix = glm::mat4(1.f);
+  //model_matrix = glm::translate(model_matrix, light_pos);
+  //model_matrix = glm::scale(model_matrix, glm::vec3(0.1f)); // a smaller cube
+  //glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
+//
+  //glBindVertexArray(*lightCubeVAO);
 
-  glBindVertexArray(*lightCubeVAO);
-  glDrawArrays(GL_TRIANGLES, 0, 36);
+  //glDrawArrays(GL_TRIANGLES, 0, 36);
 
 }
 
@@ -362,4 +377,33 @@ void glfw_window_size_callback(GLFWwindow* window, int width, int height) {
   gl_width = width;
   gl_height = height;
   printf("New viewport: (width: %d, height: %d)\n", width, height);
+}
+
+void obtenerNormales(GLfloat * normales,const GLfloat vertices[]){
+
+  for(int i = 0; i < 108; i+= 9){
+
+    GLfloat v1[] = {vertices[i], vertices[i+1], vertices[i+2]};
+    GLfloat v2[] = {vertices[i+3], vertices[i+4], vertices[i+5]};
+    GLfloat v3[] = {vertices[i+6], vertices[i+7], vertices[i+8]};
+
+    GLfloat U[] = {v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2]};
+    GLfloat V[] = {v3[0] - v1[0], v3[1] - v1[1], v3[2] - v1[2]};
+
+    GLfloat x = U[1] * V[2] - U[2] * V[1];
+    GLfloat y = U[2] * V[0] - U[0] * V[2];
+    GLfloat z = U[0] * V[1] - U[1] * V[0];
+    //printf("[%f, ", x);
+    //printf("%f, ", y);
+    //printf("%f] \n", z);
+    
+    normales[i] = x;      normales[i+3] = x; normales[i+6] = x;
+    normales[i + 1] = y;  normales[i+4] = y; normales[i+7] = y;
+    normales[i + 2] = z;  normales[i+5] = z; normales[i+8] = z;
+    
+    printf("[%f, ", normales[i]);
+    printf("%f, ", normales[i + 1]);
+    printf("%f] \n", normales[i + 2]);
+  }
+
 }
