@@ -4,6 +4,10 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <stdio.h>
+#include <filesystem>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 // GLM library to deal with matrix operations
 #include <glm/glm.hpp>
@@ -18,8 +22,9 @@ int gl_height = 480;
 
 void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-void render(double, GLuint *cubeVAO);;
+void render(double, GLuint *cubeVAO, unsigned int diffuseMap);;
 void obtenerNormales(GLfloat * normales,const GLfloat vertices[]);
+unsigned int loadTexture(const char *path);
 
 GLuint shader_program = 0; // shader program to set render pipeline
 GLuint cubeVAO = 0; // Vertext Array Object to set input data
@@ -50,7 +55,7 @@ glm::vec3 light2_specular(0.5f, 0.5f, 0.5f);
 
 // Material
 glm::vec3 material_ambient(1.0f, 0.5f, 0.31f);
-glm::vec3 material_diffuse(1.0f, 0.5f, 0.31f);
+glm::vec3 material_diffuse(0.0f, 0.0f, 0.0f);
 glm::vec3 material_specular(0.5f, 0.5f, 0.5f);
 const GLfloat material_shininess = 32.0f;
 
@@ -214,6 +219,56 @@ int main() {
      0.25f,  0.25f, -0.25f, // 3
   };
 
+  GLfloat texCoords[] = {
+    1.0f, 0.0f, // 1
+    1.0f, 1.0f, // 0
+    0.0f, 0.0f, // 2
+
+    0.0f, 1.0f, // 3
+    0.0f, 0.0f, // 2
+    1.0f, 1.0f, // 0
+
+    1.0f, 0.0f, // 2
+    1.0f, 1.0f, // 3
+    0.0f, 0.0f, // 5
+
+    0.0f, 1.0f, // 4
+    0.0f, 0.0f, // 5
+    1.0f, 1.0f, // 3
+
+    1.0f, 0.0f, // 5
+    1.0f, 1.0f, // 4
+    0.0f, 0.0f, // 6
+
+    0.0f, 1.0f, // 7
+    0.0f, 0.0f, // 6
+    1.0f, 1.0f, // 4
+
+    1.0f, 0.0f, // 6
+    1.0f, 1.0f, // 7
+    0.0f, 0.0f, // 1
+
+    0.0f, 1.0f, // 0
+    0.0f, 0.0f, // 1
+    1.0f, 1.0f, // 7
+
+    1.0f, 0.0f, // 2
+    1.0f, 1.0f, // 5
+    0.0f, 0.0f, // 1
+
+    0.0f, 1.0f, // 6
+    0.0f, 0.0f, // 1
+    1.0f, 1.0f, // 5
+
+    1.0f, 0.0f, // 4
+    1.0f, 1.0f, // 3
+    0.0f, 0.0f, // 7
+
+    0.0f, 1.0f, // 0
+    0.0f, 0.0f, // 7
+    1.0f, 1.0f  // 3
+  };
+
   GLfloat normales[sizeof(float)* 108] = {};
 
 // Vertex Buffer Object (for vertex coordinates)
@@ -236,6 +291,19 @@ int main() {
 
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(1);
+
+  // 2: calculo coordenadas de texturas
+  GLuint textCordsBuffer = 0;
+  glGenBuffers(1, &textCordsBuffer);
+  glBindBuffer(GL_ARRAY_BUFFER, textCordsBuffer);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(texCoords), texCoords, GL_STATIC_DRAW);
+
+  glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 0, NULL);
+  glEnableVertexAttribArray(2);
+
+
+  // carga de la textura que se usará para la luz difusa (Parte tres, mapa difuso):
+  unsigned int diffuseMap = loadTexture("./texturas/container2.png");
 
   // Unbind vbo (it was conveniently registered by VertexAttribPointer)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -285,7 +353,7 @@ int main() {
 
     processInput(window);
 
-    render(glfwGetTime(), &cubeVAO);
+    render(glfwGetTime(), &cubeVAO, diffuseMap);
 
     glfwSwapBuffers(window);
 
@@ -297,7 +365,7 @@ int main() {
   return 0;
 }
 
-void render(double currentTime, GLuint *cubeVAO) {
+void render(double currentTime, GLuint *cubeVAO, unsigned int diffuseMap ) {
   float f = (float)currentTime * 0.2f;
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -354,7 +422,7 @@ void render(double currentTime, GLuint *cubeVAO) {
   glUniform3fv(light2_specular_location, 1, glm::value_ptr(light2_specular));
 
   glUniform3fv(material_ambient_location, 1, glm::value_ptr(material_ambient));
-  glUniform3fv(material_diffuse_location, 1, glm::value_ptr(material_diffuse));
+  glUniform3fv(material_diffuse_location, 1, 0);
   glUniform3fv(material_specular_location, 1, glm::value_ptr(material_specular));
   glUniform1f(material_shininess_location, material_shininess);
 
@@ -372,6 +440,11 @@ void render(double currentTime, GLuint *cubeVAO) {
   glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
   // Se renderiza el segundo cubo
+
+  // bind diffuse map
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, diffuseMap);
+
   glBindVertexArray(*cubeVAO);
   glDrawArrays(GL_TRIANGLES, 0, 36);
 }
@@ -407,4 +480,42 @@ void obtenerNormales(GLfloat * normales,const GLfloat vertices[]){
     normales[i + 1] = y;  normales[i+4] = y; normales[i+7] = y;
     normales[i + 2] = z;  normales[i+5] = z; normales[i+8] = z;
   }
+}
+
+// utility function for loading a 2D texture from file
+// ---------------------------------------------------
+unsigned int loadTexture(char const * path){
+    unsigned int textureID;
+    glGenTextures(1, &textureID);
+    
+    int width, height, nrComponents;
+    unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+    if (data)
+    {
+        GLenum format;
+        if (nrComponents == 1)
+            format = GL_RED;
+        else if (nrComponents == 3)
+            format = GL_RGB;
+        else if (nrComponents == 4)
+            format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+    }
+    else
+    {
+        fprintf(stderr, "Texture failed to load at path: " );
+        stbi_image_free(data);
+    }
+
+    return textureID;
 }
