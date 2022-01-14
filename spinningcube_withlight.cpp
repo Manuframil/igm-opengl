@@ -22,7 +22,7 @@ int gl_height = 480;
 
 void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-void render(double, GLuint *cubeVAO, unsigned int diffuseMap);;
+void render(double, GLuint *cubeVAO, unsigned int diffuseMap, unsigned int specularMap);;
 void obtenerNormales(GLfloat * normales,const GLfloat vertices[]);
 unsigned int loadTexture(const char *path);
 
@@ -39,24 +39,24 @@ const char *vertexFileName = "spinningcube_withlight_vs.glsl";
 const char *fragmentFileName = "spinningcube_withlight_fs.glsl";
 
 // Camera
-glm::vec3 camera_pos(0.0f, 0.0f, 2.0f);
+glm::vec3 camera_pos(-0.5f, -0.5f, 2.0f);
 
 // Lighting
 glm::vec3 light_pos(-0.25f, 0.0f, 1.0f);
 glm::vec3 light_ambient(0.2f, 0.2f, 0.2f);
-glm::vec3 light_diffuse(0.6f, 0.6f, 0.6f);
-glm::vec3 light_specular(0.5f, 0.5f, 0.5f);
+glm::vec3 light_diffuse(0.5f, 0.5f, 0.5f);
+glm::vec3 light_specular(1.0f, 1.0f, 1.0f);
 
 // Second Lighting
 glm::vec3 light2_pos(0.25f, 0.0f, 1.0f);
 glm::vec3 light2_ambient(0.2f, 0.2f, 0.2f);
-glm::vec3 light2_diffuse(0.6f, 0.6f, 0.6f);
-glm::vec3 light2_specular(0.5f, 0.5f, 0.5f);
+glm::vec3 light2_diffuse(0.5f, 0.5f, 0.5f);
+glm::vec3 light2_specular(1.0f, 1.0f, 1.0f);
 
 // Material
 glm::vec3 material_ambient(1.0f, 0.5f, 0.31f);
-glm::vec3 material_diffuse(0.0f, 0.0f, 0.0f);
-glm::vec3 material_specular(0.5f, 0.5f, 0.5f);
+const GLfloat material_diffuse = 0;
+const GLfloat material_specular = 1;
 const GLfloat material_shininess = 32.0f;
 
 // Posición del segundo cubo
@@ -305,6 +305,9 @@ int main() {
   // carga de la textura que se usará para la luz difusa (Parte tres, mapa difuso):
   unsigned int diffuseMap = loadTexture("./texturas/container2.png");
 
+  // carga de la textura que se usará para la luz difusa (Parte tres, mapa difuso):
+  unsigned int specularMap = loadTexture("./texturas/container2_specular.png");
+
   // Unbind vbo (it was conveniently registered by VertexAttribPointer)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
   glBindBuffer(GL_ARRAY_BUFFER, 1);
@@ -340,7 +343,6 @@ int main() {
   light2_specular_location = glGetUniformLocation(shader_program, "light2.specular");
 
   // - Material data
-  material_ambient_location = glGetUniformLocation(shader_program, "material.ambient"); 
   material_diffuse_location = glGetUniformLocation(shader_program, "material.diffuse"); 
   material_specular_location = glGetUniformLocation(shader_program, "material.specular"); 
   material_shininess_location = glGetUniformLocation(shader_program, "material.shininess");
@@ -353,7 +355,7 @@ int main() {
 
     processInput(window);
 
-    render(glfwGetTime(), &cubeVAO, diffuseMap);
+    render(glfwGetTime(), &cubeVAO, diffuseMap, specularMap);
 
     glfwSwapBuffers(window);
 
@@ -365,7 +367,7 @@ int main() {
   return 0;
 }
 
-void render(double currentTime, GLuint *cubeVAO, unsigned int diffuseMap ) {
+void render(double currentTime, GLuint *cubeVAO, unsigned int diffuseMap, unsigned int specularMap) {
   float f = (float)currentTime * 0.2f;
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -388,13 +390,13 @@ void render(double currentTime, GLuint *cubeVAO, unsigned int diffuseMap ) {
   // Moving cube
   // Teniendo en cuenta el tiempo actual, se rota el cubo tanto horizontal
   // como verticalmente
-  model_matrix = glm::rotate(model_matrix,
-                          glm::radians((float)currentTime * 30.0f),
-                          glm::vec3(0.0f, 1.0f, 0.0f));
+  //model_matrix = glm::rotate(model_matrix,
+  //                        glm::radians((float)currentTime * 30.0f),
+  //                        glm::vec3(0.0f, 1.0f, 0.0f));
 // Diffuse -> light
-  model_matrix = glm::rotate(model_matrix,
-                            glm::radians((float)currentTime * 40.0f),
-                            glm::vec3(1.0f, 0.0f, 0.0f));
+  //model_matrix = glm::rotate(model_matrix,
+  //                          glm::radians((float)currentTime * 40.0f),
+  //                          glm::vec3(1.0f, 0.0f, 0.0f));
 
   // Projection
   proj_matrix = glm::perspective(glm::radians(50.0f),
@@ -422,11 +424,19 @@ void render(double currentTime, GLuint *cubeVAO, unsigned int diffuseMap ) {
   glUniform3fv(light2_specular_location, 1, glm::value_ptr(light2_specular));
 
   glUniform3fv(material_ambient_location, 1, glm::value_ptr(material_ambient));
-  glUniform3fv(material_diffuse_location, 1, 0);
-  glUniform3fv(material_specular_location, 1, glm::value_ptr(material_specular));
+  glUniform1f(material_diffuse_location, material_diffuse);
+  glUniform1f(material_specular_location, material_specular);
   glUniform1f(material_shininess_location, material_shininess);
 
   glUniform3fv(camera_pos_location, 1, glm::value_ptr(camera_pos));
+
+  // bind diffuse map
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D, diffuseMap);
+
+  // bind specular map
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D, specularMap);
 
   glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -440,10 +450,6 @@ void render(double currentTime, GLuint *cubeVAO, unsigned int diffuseMap ) {
   glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
   // Se renderiza el segundo cubo
-
-  // bind diffuse map
-  glActiveTexture(GL_TEXTURE0);
-  glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
   glBindVertexArray(*cubeVAO);
   glDrawArrays(GL_TRIANGLES, 0, 36);
