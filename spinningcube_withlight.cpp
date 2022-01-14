@@ -18,8 +18,7 @@ int gl_height = 480;
 
 void glfw_window_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-//void render(double, GLuint *cubeVAO, GLuint *lightCubeVAO);
-void render(double, GLuint *cubeVAO);
+void render(double, GLuint *cubeVAO);;
 void obtenerNormales(GLfloat * normales,const GLfloat vertices[]);
 
 GLuint shader_program = 0; // shader program to set render pipeline
@@ -47,6 +46,9 @@ glm::vec3 material_ambient(1.0f, 0.5f, 0.31f);
 glm::vec3 material_diffuse(1.0f, 0.5f, 0.31f);
 glm::vec3 material_specular(0.5f, 0.5f, 0.5f);
 const GLfloat material_shininess = 32.0f;
+
+// Posición del segundo cubo
+glm::vec3 segundoCubo_pos(0.5f,0.2f,0.0f);
 
 int main() {
   // start GL context and O/S window using the GLFW helper library
@@ -214,11 +216,11 @@ int main() {
   glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_positions), vertex_positions, GL_STATIC_DRAW);
 
   // Vertex attributes
-  // 0: vertex position (x, y, z)
+  // 0: posiciones de los vértices del primer cubo (x, y, z)
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(0);
 
-  // 1: vertex normals (x, y, z)
+  // 1: calculo de las normales para el primer cubo (x, y, z)
   obtenerNormales(normales, vertex_positions);
   GLuint normalesBuffer = 0;
   glGenBuffers(1, &normalesBuffer);
@@ -227,16 +229,6 @@ int main() {
 
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
   glEnableVertexAttribArray(1);
-
-  // second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
-  //GLuint lightCubeVAO = 0;
-  //glGenVertexArrays(1, &lightCubeVAO);
-  //glBindVertexArray(lightCubeVAO);
-
-  glBindBuffer(GL_ARRAY_BUFFER, vbo);
-  // note that we update the lamp's position attribute's stride to reflect the updated buffer data
-  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-  glEnableVertexAttribArray(0);
 
   // Unbind vbo (it was conveniently registered by VertexAttribPointer)
   glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -280,7 +272,6 @@ int main() {
 
     processInput(window);
 
-    //render(glfwGetTime(), &cubeVAO, &lightCubeVAO);
     render(glfwGetTime(), &cubeVAO);
 
     glfwSwapBuffers(window);
@@ -293,7 +284,6 @@ int main() {
   return 0;
 }
 
-//void render(double currentTime, GLuint *cubeVAO, GLuint *lightCubeVAO) {
 void render(double currentTime, GLuint *cubeVAO) {
   float f = (float)currentTime * 0.2f;
 
@@ -350,22 +340,20 @@ void render(double currentTime, GLuint *cubeVAO) {
 
   glUniform3fv(camera_pos_location, 1, glm::value_ptr(camera_pos));
 
-  //glBindVertexArray(*cubeVAO);
   glDrawArrays(GL_TRIANGLES, 0, 36);
 
-  // Representacion de la luz
-  //glUseProgram(shader_program);
-  //glUniformMatrix4fv(proj_location, 1, GL_FALSE, glm::value_ptr(proj_matrix));
-  //glUniformMatrix4fv(view_location, 1, GL_FALSE, glm::value_ptr(view_matrix));  
-  //model_matrix = glm::mat4(1.f);
-  //model_matrix = glm::translate(model_matrix, light_pos);
-  //model_matrix = glm::scale(model_matrix, glm::vec3(0.1f)); // a smaller cube
-  //glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
+  // Representacion del segundo cubo
+  // Se traslada el cubo en función de la variable segundoCubo_pos para moverlo de donde
+  // está el cubo original (porque se reusan los vértices)
+  model_matrix = glm::translate(model_matrix, segundoCubo_pos);
+  // Se escala el segundo cubo para hacerlo más chiquito.
+  model_matrix = glm::scale(model_matrix, glm::vec3(0.3f));
+  // Se pinta el móde
+  glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
 
-  //glBindVertexArray(*lightCubeVAO);
-
-  //glDrawArrays(GL_TRIANGLES, 0, 36);
-
+  // Se renderiza el segundo cubo
+  glBindVertexArray(*cubeVAO);
+  glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
 void processInput(GLFWwindow *window) {
@@ -399,5 +387,4 @@ void obtenerNormales(GLfloat * normales,const GLfloat vertices[]){
     normales[i + 1] = y;  normales[i+4] = y; normales[i+7] = y;
     normales[i + 2] = z;  normales[i+5] = z; normales[i+8] = z;
   }
-
 }
