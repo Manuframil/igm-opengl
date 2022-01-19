@@ -390,13 +390,13 @@ void render(double currentTime, GLuint *cubeVAO, unsigned int diffuseMap, unsign
   // Moving cube
   // Teniendo en cuenta el tiempo actual, se rota el cubo tanto horizontal
   // como verticalmente
-  //model_matrix = glm::rotate(model_matrix,
-  //                        glm::radians((float)currentTime * 30.0f),
-  //                        glm::vec3(0.0f, 1.0f, 0.0f));
+  model_matrix = glm::rotate(model_matrix,
+                          glm::radians((float)currentTime * 30.0f),
+                          glm::vec3(0.0f, 1.0f, 0.0f));
 // Diffuse -> light
-  //model_matrix = glm::rotate(model_matrix,
-  //                          glm::radians((float)currentTime * 40.0f),
-  //                          glm::vec3(1.0f, 0.0f, 0.0f));
+  model_matrix = glm::rotate(model_matrix,
+                            glm::radians((float)currentTime * 40.0f),
+                            glm::vec3(1.0f, 0.0f, 0.0f));
 
   // Projection
   proj_matrix = glm::perspective(glm::radians(50.0f),
@@ -448,6 +448,9 @@ void render(double currentTime, GLuint *cubeVAO, unsigned int diffuseMap, unsign
   model_matrix = glm::scale(model_matrix, glm::vec3(0.3f));
   // Se pinta el móde
   glUniformMatrix4fv(model_location, 1, GL_FALSE, glm::value_ptr(model_matrix));
+
+  glUniform1i(material_diffuse_location, material_diffuse);
+  glUniform1i(material_specular_location, material_specular);
 
   // Se renderiza el segundo cubo
 
